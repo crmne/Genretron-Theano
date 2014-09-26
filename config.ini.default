@@ -1,0 +1,54 @@
+# This is the default config file for Genretron.
+
+[Input]
+AudioFolder: /path/to/audio
+
+[Preprocessing]
+ListsFolder: /path/to/lists
+FeaturesFolder: /path/to/features
+NumberOfFolds: 10
+NumberOfSongsPerGenre: 10
+TrainValidationRatio: 0.8
+
+[Output]
+OutputFolder: /path/to/output
+Plot: Yes
+SaveBestModel: Yes
+SavePlot: Yes
+
+[Model]
+# Can be LinearRegression or MultiLayerPerceptron
+Model: LinearRegression
+NumberOfEpochs: 5000
+
+# Can be Sigmoid or ReLU
+OutputLayer: Sigmoid
+BatchSize: 200
+
+# Can be a number or None for random seed
+Seed: 1
+LearningRate: 0.002
+
+[LearningRateUpdate]
+# Can be Exponential or Annealed
+UpdateType: Exponential
+BeginAnneal: 500
+MinimumLearningRate: 0.00001
+DecayFactor: 1.0005
+
+[LinearRegression]
+
+[MultiLayerPerceptron]
+# One number per hidden layer, separated by spaces
+NumberOfNeuronsPerHiddenLayer: 50 50 50
+
+# One number per hidden layer, separated by spaces
+DropoutRatePerHiddenLayer: 0.5 0.5 0.5
+
+# Can be Sigmoid or ReLU
+Activation: Sigmoid
+
+[Momentum]
+# Can be Yes or No
+UseMomentum: Yes
+MomentumRate: 0.1
