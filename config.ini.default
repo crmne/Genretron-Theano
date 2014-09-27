@@ -3,6 +3,20 @@
 [Input]
 AudioFolder: /path/to/audio
 
+[Spectrogram]
+WindowSize: 1024
+StepSize: 512
+# Can be square, hamming, hanning, bartlett or blackman
+WindowType: square
+FFTResolution: 1024
+
+[Tracks]
+# TODO: some tracks are not exactly 30 seconds
+LengthInSeconds: 29
+SampleRate: 22050
+BitsPerSample: 16
+Channels: 1
+
 [Preprocessing]
 ListsFolder: /path/to/lists
 FeaturesFolder: /path/to/features
