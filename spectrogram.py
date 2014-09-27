@@ -22,7 +22,11 @@ class Spectrogram(object):
     def bins(fft_resolution):
         return fft_resolution/2 + 1
 
-    def __init__(self, frames, win_size, step_size, window_type, fft_resolution):
+    def __init__(self, spectrogram):
+        self.spectrogram = spectrogram
+
+    @classmethod
+    def from_waveform(cls, frames, win_size, step_size, window_type, fft_resolution):
         window = Spectrogram.windows[window_type](win_size)
 
         # will take windows x[n1:n2].  generate
@@ -31,12 +35,14 @@ class Spectrogram(object):
         wins = Spectrogram.wins(win_size, len(frames), step_size)
         bins = Spectrogram.bins(fft_resolution)
 
-        self.spectrogram = numpy.zeros(Spectrogram.shape(wins, bins))
+        spectrogram = numpy.zeros(Spectrogram.shape(wins, bins))
 
         for i, n in enumerate(wins):
             xseg = frames[n-win_size:n]
             z = numpy.fft.fft(window * xseg, fft_resolution)
-            self.spectrogram[i, :] = numpy.log(numpy.abs(z[:bins]))
+            spectrogram[i, :] = numpy.log(numpy.abs(z[:bins]))
+
+        return cls(spectrogram)
 
     def plot(self):
         import matplotlib.pyplot as plt
