@@ -1,19 +1,20 @@
 #!/usr/bin/env python
 import logging
 import tables
+from collections import OrderedDict
 from scikits.audiolab import sndfile
 from scikits.audiolab import available_file_formats
 from os import sys, path, walk
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 import init
 import config
-import ground_truth
-import spectrogram
+from ground_truth import GroundTruth
+from spectrogram import Spectrogram
 from track import Track
 
 
 def list_audio_files_and_genres(audio_folder, extensions):
-    files = {}
+    files = OrderedDict()
     logging.info("Ground Truth: listing files...")
     for root, dirnames, filenames in walk(audio_folder):
         for f in filenames:
@@ -39,7 +40,7 @@ def calc_spectrogram(audio_file, spectrogram_options, tracks_options):
     f = sndfile(audio_file, mode='read')  # TODO: check if file has good form
     frames = f.read_frames(lengthinseconds*samplerate)
     logging.debug("Calculating spectrogram of %s" % audio_file)
-    sg = spectrogram.Spectrogram(frames, windowsize, stepsize, windowtype, fftres)
+    sg = Spectrogram.from_waveform(frames, windowsize, stepsize, windowtype, fftres)
     return sg.spectrogram
 
 
@@ -55,7 +56,7 @@ if __name__ == '__main__':
     if path.isdir(audio_folder):
         # ground truth
         audiofiles = list_audio_files_and_genres(audio_folder, extensions)
-        gt = ground_truth.GroundTruth(audiofiles)
+        gt = GroundTruth(audiofiles)
         gt.save_to_pickle_file(ground_truth_path)
         logging.info("Ground Truth: saved in %s" % ground_truth_path)
 
@@ -64,7 +65,9 @@ if __name__ == '__main__':
         h5file = tables.open_file(features_path, mode="w", title="Features")
         table = h5file.create_table("/", 'track', Track, "Track")
         tr = table.row
+        i = 0
         for filename, genre in gt.ground_truth.iteritems():
+            tr['idnumber'] = i
             tr['name'] = path.basename(filename)
             tr['path'] = filename
             tr['genre'] = genre
@@ -75,8 +78,9 @@ if __name__ == '__main__':
             )
             logging.debug("Saving %s in HDF5 file." % filename)
             tr.append()
+            i = i + 1
         h5file.close()
-        logging.info("Feature Extraction: saved spectrograms in %s." % features_path)
+        logging.info("Feature Extraction: spectrograms saved in %s." % features_path)
 
     else:
         raise StandardError("%s not found!" % audio_folder)

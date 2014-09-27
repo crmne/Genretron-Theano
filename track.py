@@ -14,6 +14,7 @@ shape = Spectrogram.shape(wins, bins)
 
 class Track(IsDescription):
     """Description of a track in HDF5"""
+    idnumber = Int64Col()
     name = StringCol(64)
     path = StringCol(512)
     genre = StringCol(32)
