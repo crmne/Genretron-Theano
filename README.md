@@ -7,4 +7,4 @@
 * [NumPy](http://www.numpy.org)
 * [SciPy](http://www.scipy.org)
 * [Audiolab](http://cournape.github.io/audiolab)
-<!-- * [scikit-learn](http://scikit-learn.org) -->
+
