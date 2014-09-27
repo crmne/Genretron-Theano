@@ -8,7 +8,7 @@ class GroundTruth(object):
 
     @classmethod
     def load_from_pickle_file(cls, filename):
-        cls(pickle.load(open(filename, "rb")))
+        return cls(pickle.load(open(filename, "rb")))
 
     def save_to_pickle_file(self, filename):
         pickle.dump(self.ground_truth, open(filename, "wb"))
