@@ -2,6 +2,7 @@
 import logging
 import tables
 from scikits.audiolab import sndfile
+from scikits.audiolab import available_file_formats
 from os import sys, path, walk
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
 import config
@@ -50,11 +51,11 @@ def save_features_in_hdf5(features_path, ground_truth, spectrogram_options, trac
 if __name__ == '__main__':
     conf = config.get_config()
     audio_folder = path.expanduser(conf.get('Input', 'AudioFolder'))
-    extensions = conf.get('Input', 'AudioFileExtensions').split(' ')
     lists_folder = path.expanduser(conf.get('Preprocessing', 'ListsFolder'))
     ground_truth_path = path.join(lists_folder, 'ground_truth.pkl')
     features_folder = path.expanduser(conf.get('Preprocessing', 'FeaturesFolder'))
     features_path = path.join(features_folder, 'features.h5')
+    extensions = available_file_formats()
     if path.isdir(audio_folder):
         # ground truth
         audiofiles = list_audio_files_and_genres(audio_folder, extensions)
