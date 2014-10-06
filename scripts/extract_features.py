@@ -2,7 +2,7 @@
 import logging
 import tables
 from collections import OrderedDict
-from scikits.audiolab import sndfile
+from scikits.audiolab import Sndfile
 from scikits.audiolab import available_file_formats
 from os import sys, path, walk
 sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
@@ -28,21 +28,13 @@ def list_audio_files_and_genres(audio_folder, extensions):
     return files
 
 
-def calc_spectrogram(audio_file, spectrogram_options, tracks_options):
-    lengthinseconds = int(tracks_options['lengthinseconds'])
-    samplerate = int(tracks_options['samplerate'])
-    windowsize = int(spectrogram_options['windowsize'])
-    stepsize = int(spectrogram_options['stepsize'])
-    windowtype = spectrogram_options['windowtype']
-    fftres = int(spectrogram_options['fftresolution'])
-
-    logging.debug("Reading %s" % audio_file)
-    f = sndfile(audio_file, mode='read')  # TODO: check if file has good form
-    frames = f.read_frames(lengthinseconds*samplerate)
-    logging.debug("Calculating spectrogram of %s" % audio_file)
-    sg = Spectrogram.from_waveform(frames, windowsize, stepsize, windowtype, fftres)
-    return sg.spectrogram
-
+def check_audio_file_specs(sndfile, samplerate, encoding, channels):
+    if sndfile.samplerate != samplerate:
+        raise StandardError("%s\nSample rate of above file doesn't match required sample rate of %i", f, samplerate)
+    if sndfile.encoding != encoding:
+        raise StandardError("%s\nEncoding of above file doesn't match required encoding %s", f, encoding)
+    if sndfile.channels != channels:
+        raise StandardError("%s\nNumber of channels of above file doesn't match required number of channels (%i)", f, channels)
 
 if __name__ == '__main__':
     init.init_logger()
@@ -53,6 +45,14 @@ if __name__ == '__main__':
     features_folder = path.expanduser(conf.get('Preprocessing', 'FeaturesFolder'))
     features_path = path.join(features_folder, 'features.h5')
     extensions = available_file_formats()
+    lengthinseconds = int(conf.get('Tracks', 'LengthInSeconds'))
+    samplerate = int(conf.get('Tracks', 'SampleRate'))
+    encoding = conf.get('Tracks', 'Encoding')
+    channels = int(conf.get('Tracks', 'Channels'))
+    windowsize = int(conf.get('Spectrogram', 'WindowSize'))
+    stepsize = int(conf.get('Spectrogram', 'StepSize'))
+    windowtype = conf.get('Spectrogram', 'WindowType')
+    fftres = int(conf.get('Spectrogram', 'FFTResolution'))
     if path.isdir(audio_folder):
         # ground truth
         audiofiles = list_audio_files_and_genres(audio_folder, extensions)
@@ -67,15 +67,26 @@ if __name__ == '__main__':
         tr = table.row
         i = 0
         for filename, genre in gt.ground_truth.iteritems():
+            # Read file
+            f = Sndfile(filename, mode='r')
+
+            # Check against specs
+            check_audio_file_specs(f, samplerate, encoding, channels)
+
+            # Read
+            logging.debug("Reading %s" % filename)
+            frames = f.read_frames(lengthinseconds*samplerate)
+
+            # Calculate Spectrogram
+            logging.debug("Calculating spectrogram of %s" % filename)
+            sg = Spectrogram.from_waveform(frames, windowsize, stepsize, windowtype, fftres)
+
+            # Save in feature file
             tr['idnumber'] = i
             tr['name'] = path.basename(filename)
             tr['path'] = filename
             tr['genre'] = genre
-            tr['spectrogram'] = calc_spectrogram(
-                filename,
-                dict(conf.items('Spectrogram')),
-                dict(conf.items('Tracks'))
-            )
+            tr['spectrogram'] = sg.spectrogram
             logging.debug("Saving %s in HDF5 file." % filename)
             tr.append()
             i = i + 1

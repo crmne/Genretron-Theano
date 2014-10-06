@@ -29,9 +29,6 @@ class Spectrogram(object):
     def from_waveform(cls, frames, win_size, step_size, window_type, fft_resolution):
         window = Spectrogram.windows[window_type](win_size)
 
-        # will take windows x[n1:n2].  generate
-        # and loop over n2 such that all frames
-        # fit within the waveform
         wins = Spectrogram.wins(win_size, len(frames), step_size)
         bins = Spectrogram.bins(fft_resolution)
 
