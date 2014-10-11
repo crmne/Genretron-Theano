@@ -20,7 +20,7 @@ class Spectrogram(object):
 
     @staticmethod
     def bins(fft_resolution):
-        return fft_resolution/2 + 1
+        return fft_resolution / 2
 
     def __init__(self, spectrogram):
         self.spectrogram = spectrogram
@@ -35,9 +35,10 @@ class Spectrogram(object):
         spectrogram = numpy.zeros(Spectrogram.shape(wins, bins))
 
         for i, n in enumerate(wins):
-            xseg = frames[n-win_size:n]
+            xseg = frames[n - win_size:n]
             z = numpy.fft.fft(window * xseg, fft_resolution)
-            spectrogram[i, :] = numpy.log(numpy.abs(z[:bins]))
+            # adding a small quantity fixes log(0) problem
+            spectrogram[i, :] = numpy.log(numpy.abs(z[:bins] + 1e-8))
 
         return cls(spectrogram)
 
