@@ -2,9 +2,10 @@ import cPickle as pickle
 
 
 class GroundTruth(object):
+
     def __init__(self, dict_of_files_and_genres):
         self.ground_truth = dict_of_files_and_genres
-        self.genres = self.ground_truth.values()
+        self.genres = sorted(list(set(self.ground_truth.values())))
 
     @classmethod
     def load_from_pickle_file(cls, filename):
