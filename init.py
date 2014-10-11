@@ -13,4 +13,5 @@ log_levels = {
 def init_logger():
     conf = config.get_config()
     log_level = conf.get('Output', 'LogLevel')
-    logging.basicConfig(format="%(asctime)s - %(levelname)s: %(message)s", level=log_levels[log_level])
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s: %(message)s", level=log_levels[log_level])
