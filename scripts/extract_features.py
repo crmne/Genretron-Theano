@@ -4,8 +4,9 @@ import tables
 from collections import OrderedDict
 from scikits.audiolab import Sndfile
 from scikits.audiolab import available_file_formats
-from os import sys, path, walk
-sys.path.append(path.dirname(path.dirname(path.abspath(__file__))))
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import init
 import config
 from ground_truth import GroundTruth
@@ -16,12 +17,12 @@ from track import Track
 def list_audio_files_and_genres(audio_folder, extensions):
     files = OrderedDict()
     logging.info("Ground Truth: listing files...")
-    for root, dirnames, filenames in walk(audio_folder):
+    for root, dirnames, filenames in os.walk(audio_folder):
         for f in filenames:
             for x in extensions:
                 if f.endswith(x):
-                    filename = path.join(root, f)
-                    genre = path.basename(root)
+                    filename = os.path.join(root, f)
+                    genre = os.path.basename(root)
                     files[filename] = genre
                     logging.debug("Ground Truth: %s is %s." % (filename, genre))
     logging.info("Ground Truth: %i audio files found." % len(files))
@@ -39,11 +40,9 @@ def check_audio_file_specs(sndfile, samplerate, encoding, channels):
 if __name__ == '__main__':
     init.init_logger()
     conf = config.get_config()
-    audio_folder = path.expanduser(conf.get('Input', 'AudioFolder'))
-    lists_folder = path.expanduser(conf.get('Preprocessing', 'ListsFolder'))
-    ground_truth_path = path.join(lists_folder, 'ground_truth.pkl')
-    features_folder = path.expanduser(conf.get('Preprocessing', 'FeaturesFolder'))
-    features_path = path.join(features_folder, 'features.h5')
+    audio_folder = os.path.expanduser(conf.get('Input', 'AudioFolder'))
+    ground_truth_path = os.path.expanduser(conf.get('Preprocessing', 'GroundTruthPath'))
+    features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
     extensions = available_file_formats()
     lengthinseconds = int(conf.get('Tracks', 'LengthInSeconds'))
     samplerate = int(conf.get('Tracks', 'SampleRate'))
@@ -53,7 +52,7 @@ if __name__ == '__main__':
     stepsize = int(conf.get('Spectrogram', 'StepSize'))
     windowtype = conf.get('Spectrogram', 'WindowType')
     fftres = int(conf.get('Spectrogram', 'FFTResolution'))
-    if path.isdir(audio_folder):
+    if os.path.isdir(audio_folder):
         # ground truth
         audiofiles = list_audio_files_and_genres(audio_folder, extensions)
         gt = GroundTruth(audiofiles)
@@ -83,9 +82,10 @@ if __name__ == '__main__':
 
             # Save in feature file
             tr['idnumber'] = i
-            tr['name'] = path.basename(filename)
+            tr['name'] = os.path.basename(filename)
             tr['path'] = filename
             tr['genre'] = genre
+            tr['target'] = [gen == genre for gen in gt.genres]
             tr['spectrogram'] = sg.spectrogram
             logging.debug("Saving %s in HDF5 file." % filename)
             tr.append()
