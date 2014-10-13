@@ -52,6 +52,7 @@ def prepare_dataset_from_feature_file(features_path):
     # memory
     features = load_features(features_path)
     feature_slice = features.root.track[:]
+    features.close()
     X = feature_slice['spectrogram']
     Y = feature_slice['target'].astype(numpy.int32)
 
@@ -84,6 +85,9 @@ if __name__ == '__main__':
     learning_rate = float(conf.get('Model', 'LearningRate'))
     n_epochs = int(conf.get('Model', 'NumberOfEpochs'))
     n_genres = int(conf.get('Tracks', 'NumberOfGenres'))
+    patience = int(conf.get('EarlyStopping', 'Patience'))
+    patience_increase = int(conf.get('EarlyStopping', 'PatienceIncrease'))
+    improvement_threshold = float(conf.get('EarlyStopping', 'ImprovementThreshold'))
     seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))  # TODO: finish random state feature
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
 
@@ -146,17 +150,8 @@ if __name__ == '__main__':
     # TRAIN MODEL #
     ###############
     logging.info('Training the model...')
-    # early-stopping parameters
-    patience = 5000  # look as this many examples regardless
-    patience_increase = 2  # wait this much longer when a new best is
-    # found
-    improvement_threshold = 0.995  # a relative improvement of this much is
-    # considered significant
+    # go through this many minibatche before checking the network on the validation set; in this case we check every epoch
     validation_frequency = min(n_train_batches, patience / 2)
-    # go through this many
-    # minibatche before checking the network
-    # on the validation set; in this case we
-    # check every epoch
 
     best_params = None
     best_validation_loss = numpy.inf
@@ -211,3 +206,4 @@ if __name__ == '__main__':
     logging.info('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.1fs' % (end_time - start_time))
+    # TODO: save parameters and logs in experiment folder

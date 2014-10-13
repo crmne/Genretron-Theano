@@ -45,6 +45,14 @@ BatchSize: 20
 Seed: 1
 LearningRate: 0.002
 
+[EarlyStopping]
+# Look at this many examples regardless
+Patience: 10000
+# Wait this much longer when a new best is found
+PatienceIncrease: 2
+# A relative improvement of this much is considered significant
+ImprovementThreshold: 0.995
+
 [LearningRateUpdate]
 # Can be Exponential or Annealed
 UpdateType: Exponential
