@@ -1,5 +1,6 @@
 import logging
 import config
+import theano
 
 log_levels = {
     'DEBUG': logging.DEBUG,
@@ -15,3 +16,7 @@ def init_logger():
     log_level = conf.get('Output', 'LogLevel')
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s: %(message)s", level=log_levels[log_level])
+
+
+def init_theano():
+    theano.config.floatX = 'float32'
