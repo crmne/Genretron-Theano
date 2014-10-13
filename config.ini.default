@@ -11,33 +11,35 @@ WindowType: square
 FFTResolution: 1024
 
 [Tracks]
-# TODO: some tracks are not exactly 30 seconds
 LengthInSeconds: 29
 SampleRate: 22050
-BitsPerSample: 16
+Encoding: pcm16
 Channels: 1
+NumberOfGenres: 10
 
 [Preprocessing]
-ListsFolder: /path/to/lists
-FeaturesFolder: /path/to/features
+GroundTruthPath: /path/to/ground_truth.pkl
+RawFeaturesPath: /path/to/features.h5
 NumberOfFolds: 10
 NumberOfSongsPerGenre: 10
-TrainValidationRatio: 0.8
+TrainValidTestPercentages: 80 10 10
 
 [Output]
-OutputFolder: /path/to/output
+OutputFolder: /path/to/experiment/folder
 Plot: Yes
 SaveBestModel: Yes
 SavePlot: Yes
+LogLevel: DEBUG
+SaveLog: Yes
 
 [Model]
-# Can be LinearRegression or MultiLayerPerceptron
-Model: LinearRegression
+# Can be LogisticRegression or MultiLayerPerceptron
+Model: LogisticRegression
 NumberOfEpochs: 5000
 
 # Can be Sigmoid or ReLU
 OutputLayer: Sigmoid
-BatchSize: 200
+BatchSize: 20
 
 # Can be a number or None for random seed
 Seed: 1
@@ -50,7 +52,7 @@ BeginAnneal: 500
 MinimumLearningRate: 0.00001
 DecayFactor: 1.0005
 
-[LinearRegression]
+[LogisticRegression]
 
 [MultiLayerPerceptron]
 # One number per hidden layer, separated by spaces
