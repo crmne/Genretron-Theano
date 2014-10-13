@@ -83,6 +83,7 @@ if __name__ == '__main__':
     batch_size = int(conf.get('Model', 'BatchSize'))
     learning_rate = float(conf.get('Model', 'LearningRate'))
     n_epochs = int(conf.get('Model', 'NumberOfEpochs'))
+    n_genres = int(conf.get('Tracks', 'NumberOfGenres'))
     seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))  # TODO: finish random state feature
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
 
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     x = T.matrix('x')
     y = T.ivector('y')
 
-    classifier = LogisticRegression(input=x, n_in=train_set_x.get_value(borrow=True).shape[1], n_out=10)
+    classifier = LogisticRegression(input=x, n_in=train_set_x.get_value(borrow=True).shape[1], n_out=n_genres)
 
     cost = classifier.negative_log_likelihood(y)
 
