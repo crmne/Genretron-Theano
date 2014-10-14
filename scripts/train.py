@@ -21,6 +21,7 @@ def load_features(features_path):
 
 
 def shuffle_in_unison(x, y, random_state):
+    logging.debug("Seed = %i" % random_state.get_state()[1][0])
     rng_state = random_state.get_state()
     random_state.shuffle(x)
     random_state.set_state(rng_state)
@@ -58,10 +59,12 @@ def prepare_dataset_from_feature_file(features_path, random_state):
     Y = feature_slice['target'].astype(numpy.int32)
 
     logging.info("Preprocessing data...")
+    logging.debug("Reshaping...")
     X_reshaped = numpy.reshape(X, (X.shape[0], X.shape[1] * X.shape[2]))
+    logging.debug("Scaling...")
     preprocessing.StandardScaler(copy=False).fit_transform(X_reshaped, Y)
 
-    logging.debug("Shuffling using seed = %i..." % random_state.get_state()[1][0])
+    logging.debug("Shuffling...")
     shuffle_in_unison(X_reshaped, Y, random_state)
 
     logging.debug("Splitting...")

@@ -42,7 +42,7 @@ OutputLayer: Sigmoid
 BatchSize: 20
 
 # Can be a number or None for random seed
-Seed: 1
+Seed: None
 LearningRate: 0.002
 
 [EarlyStopping]
