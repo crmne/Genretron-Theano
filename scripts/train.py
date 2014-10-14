@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import time
 import numpy
+from numpy.random import RandomState
 import theano
 import theano.tensor as T
 import logging
@@ -19,11 +20,11 @@ def load_features(features_path):
     return tables.open_file(features_path, 'r')
 
 
-def shuffle_in_unison(x, y):
-    rng_state = numpy.random.get_state()
-    numpy.random.shuffle(x)
-    numpy.random.set_state(rng_state)
-    numpy.random.shuffle(y)
+def shuffle_in_unison(x, y, random_state):
+    rng_state = random_state.get_state()
+    random_state.shuffle(x)
+    random_state.set_state(rng_state)
+    random_state.shuffle(y)
 
 
 def split_dataset(data_x, data_y, ratios):
@@ -47,7 +48,7 @@ def shared_dataset(data_x, data_y, borrow):
     return shared_x, shared_y
 
 
-def prepare_dataset_from_feature_file(features_path):
+def prepare_dataset_from_feature_file(features_path, random_state):
     # This function exists to let the garbage collector remove X and Y from
     # memory
     features = load_features(features_path)
@@ -60,8 +61,8 @@ def prepare_dataset_from_feature_file(features_path):
     X_reshaped = numpy.reshape(X, (X.shape[0], X.shape[1] * X.shape[2]))
     preprocessing.StandardScaler(copy=False).fit_transform(X_reshaped, Y)
 
-    logging.debug("Shuffling...")
-    shuffle_in_unison(X_reshaped, Y)
+    logging.debug("Shuffling using seed = %i..." % random_state.get_state()[1][0])
+    shuffle_in_unison(X_reshaped, Y, random_state)
 
     logging.debug("Splitting...")
     (train_x, valid_x, test_x), (train_y, valid_y, test_y) = split_dataset(
@@ -88,10 +89,12 @@ if __name__ == '__main__':
     patience = int(conf.get('EarlyStopping', 'Patience'))
     patience_increase = int(conf.get('EarlyStopping', 'PatienceIncrease'))
     improvement_threshold = float(conf.get('EarlyStopping', 'ImprovementThreshold'))
-    seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))  # TODO: finish random state feature
+    seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
 
-    datasets = prepare_dataset_from_feature_file(features_path)
+    random_state = RandomState(seed)
+
+    datasets = prepare_dataset_from_feature_file(features_path, random_state)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
