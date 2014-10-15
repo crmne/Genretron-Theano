@@ -20,12 +20,13 @@ def load_features(features_path):
     return tables.open_file(features_path, 'r')
 
 
-def shuffle_in_unison(x, y, random_state):
-    logging.debug("Seed = %i" % random_state.get_state()[1][0])
-    rng_state = random_state.get_state()
-    random_state.shuffle(x)
-    random_state.set_state(rng_state)
-    random_state.shuffle(y)
+def shuffle_in_unison(x, y, rng):
+    logging.debug("Seed = %i" % rng.get_state()[1][0])
+    rng_state = rng.get_state()
+    rng.shuffle(x)
+    rng.set_state(rng_state)
+    rng.shuffle(y)
+    rng.set_state(rng_state)
 
 
 def split_dataset(data_x, data_y, ratios):
@@ -49,7 +50,7 @@ def shared_dataset(data_x, data_y, borrow):
     return shared_x, shared_y
 
 
-def prepare_dataset_from_feature_file(features_path, random_state):
+def prepare_dataset_from_feature_file(features_path, rng):
     # This function exists to let the garbage collector remove X and Y from
     # memory
     features = load_features(features_path)
@@ -65,7 +66,7 @@ def prepare_dataset_from_feature_file(features_path, random_state):
     preprocessing.StandardScaler(copy=False).fit_transform(X_reshaped, Y)
 
     logging.debug("Shuffling...")
-    shuffle_in_unison(X_reshaped, Y, random_state)
+    shuffle_in_unison(X_reshaped, Y, rng)
 
     logging.debug("Splitting...")
     (train_x, valid_x, test_x), (train_y, valid_y, test_y) = split_dataset(
@@ -95,9 +96,9 @@ if __name__ == '__main__':
     seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
 
-    random_state = RandomState(seed)
+    rng = RandomState(seed)
 
-    datasets = prepare_dataset_from_feature_file(features_path, random_state)
+    datasets = prepare_dataset_from_feature_file(features_path, rng)
 
     train_set_x, train_set_y = datasets[0]
     valid_set_x, valid_set_y = datasets[1]
@@ -180,7 +181,8 @@ if __name__ == '__main__':
                                      for i in xrange(n_valid_batches)]
                 this_validation_loss = numpy.mean(validation_losses)
 
-                logging.info('epoch %i, minibatch %i/%i, validation error %f %%' %
+                logging.info(
+                    'epoch %i, minibatch %i/%i, validation error %f %%' %
                     (epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
 
                 # if we got the best validation score until now
@@ -191,25 +193,29 @@ if __name__ == '__main__':
                         patience = max(patience, iter * patience_increase)
 
                     best_validation_loss = this_validation_loss
-                    # test it on the test set
 
+                    # test it on the test set
                     test_losses = [test_model(i)
                                    for i in xrange(n_test_batches)]
                     test_score = numpy.mean(test_losses)
 
-                    logging.info('     epoch %i, minibatch %i/%i, test error of best model %f %%' %
-                          (epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
+                    logging.info(
+                        '     epoch %i, minibatch %i/%i, test error of best model %f %%' %
+                        (epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
 
             if patience <= iter:
                 done_looping = True
                 break
 
     end_time = time.clock()
-    logging.info('Optimization complete with best validation score of %f %%, with test performance %f %%' %
-          (best_validation_loss * 100., test_score * 100.))
-    logging.info('The code run for %d epochs, with %f epochs/sec' % (
+    logging.info(
+        'Optimization complete with best validation score of %f %%, with test performance %f %%' %
+        (best_validation_loss * 100., test_score * 100.))
+    logging.info(
+        'The code run for %d epochs, with %f epochs/sec' % (
         epoch, 1. * epoch / (end_time - start_time)))
-    logging.info('The code for file ' +
-                          os.path.split(__file__)[1] +
-                          ' ran for %.1fs' % (end_time - start_time))
+    logging.info(
+        'The code for file ' +
+        os.path.split(__file__)[1] +
+        ' ran for %.1fs' % (end_time - start_time))
     # TODO: save parameters and logs in experiment folder
