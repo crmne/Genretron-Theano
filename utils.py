@@ -32,3 +32,16 @@ def query_yes_no(question, default="yes"):
         else:
             sys.stdout.write("Please respond with 'yes' or 'no' "
                              "(or 'y' or 'n').\n")
+
+
+def find_two_closest_factors(n):
+    deltas = []
+    factors = {}
+    if n <= 1:
+        return (1, 1)
+    for i in range(1, n):
+        if n % i == 0:
+            delta = abs(i - n/i)
+            deltas.append(delta)
+            factors[delta] = (i, n/i)
+    return factors[min(deltas)]

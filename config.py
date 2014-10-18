@@ -52,3 +52,7 @@ def get_config(refresh=False):
             config_not_found()
     else:
         return config
+
+
+def copy_to(filename):
+    shutil.copyfile(path_to_config, filename)

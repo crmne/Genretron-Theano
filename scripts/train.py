@@ -13,6 +13,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import init
 import config
 from logistic_regression import LogisticRegression
+from parameters import Parameters
+from plot import Plot
 
 
 def load_features(features_path):
@@ -48,6 +50,17 @@ def shared_dataset(data_x, data_y, borrow):
     shared_x = theano.shared(name='shared_x', value=data_x, borrow=borrow)
     shared_y = theano.shared(name='shared_y', value=data_y, borrow=borrow)
     return shared_x, shared_y
+
+
+def save_best_parameters(W, b, output_folder):
+    params = Parameters(W, b)
+    params_path = os.path.join(output_folder, 'parameters.pkl')
+    logging.debug("Saving best parameters in %s..." % params_path)
+    params.save_to_pickle_file(params_path)
+
+
+def save_plot():
+    raise NotImplementedError
 
 
 def prepare_dataset_from_feature_file(features_path, rng):
@@ -94,7 +107,17 @@ if __name__ == '__main__':
     patience_increase = int(conf.get('EarlyStopping', 'PatienceIncrease'))
     improvement_threshold = float(conf.get('EarlyStopping', 'ImprovementThreshold'))
     seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))
+    save_best_model = True if conf.get('Output', 'SaveBestModel') else False
+    output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
+
+    # Output
+    if not os.path.isdir(output_folder):
+        os.makedirs(output_folder)
+
+    config.copy_to(os.path.join(output_folder, 'config.ini'))
+
+    plot = Plot('Validation')
 
     rng = RandomState(seed)
 
@@ -109,13 +132,21 @@ if __name__ == '__main__':
     n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
     n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
 
+    logging.debug('Train batches = %i, Valid batches = %i, Test batches = %i' %
+        (n_train_batches, n_valid_batches, n_test_batches))
+
+    ###############
+    # BUILD MODEL #
+    ###############
     logging.info("Building the model...")
 
     index = T.lscalar()
     x = T.matrix('x')
     y = T.ivector('y')
 
-    classifier = LogisticRegression(input=x, n_in=train_set_x.get_value(borrow=True).shape[1], n_out=n_genres)
+    n_in = train_set_x.get_value(borrow=True).shape[1]
+    classifier = LogisticRegression(input=x, n_in=n_in, n_out=n_genres)
+    logging.debug("Using LogisticRegression with %i inputs and %i outputs" % (n_in, n_genres))
 
     cost = classifier.negative_log_likelihood(y)
 
@@ -157,7 +188,7 @@ if __name__ == '__main__':
     # TRAIN MODEL #
     ###############
     logging.info('Training the model...')
-    # go through this many minibatche before checking the network on the validation set; in this case we check every epoch
+    # go through this many minibatches before checking the network on the validation set; in this case we check every epoch
     validation_frequency = min(n_train_batches, patience / 2)
 
     best_params = None
@@ -185,6 +216,9 @@ if __name__ == '__main__':
                     'epoch %i, minibatch %i/%i, validation error %f %%' %
                     (epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
 
+                plot.append('Validation', this_validation_loss)
+                plot.update_plot()
+
                 # if we got the best validation score until now
                 if this_validation_loss < best_validation_loss:
                     # improve patience if loss improvement is good enough
@@ -203,6 +237,9 @@ if __name__ == '__main__':
                         '     epoch %i, minibatch %i/%i, test error of best model %f %%' %
                         (epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
 
+                    if save_best_model:
+                        save_best_parameters(classifier.W.get_value(borrow=True), classifier.b.get_value(borrow=True), output_folder)
+
             if patience <= iter:
                 done_looping = True
                 break
@@ -218,4 +255,3 @@ if __name__ == '__main__':
         'The code for file ' +
         os.path.split(__file__)[1] +
         ' ran for %.1fs' % (end_time - start_time))
-    # TODO: save parameters and logs in experiment folder
