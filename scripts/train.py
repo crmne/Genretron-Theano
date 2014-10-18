@@ -117,7 +117,7 @@ if __name__ == '__main__':
 
     config.copy_to(os.path.join(output_folder, 'config.ini'))
 
-    plot = Plot('Validation')
+    plot = Plot('Validation', 'Test')
 
     rng = RandomState(seed)
 
@@ -237,8 +237,14 @@ if __name__ == '__main__':
                         '     epoch %i, minibatch %i/%i, test error of best model %f %%' %
                         (epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
 
+                    plot.append('Test', test_score)
+                    plot.update_plot()
+
                     if save_best_model:
                         save_best_parameters(classifier.W.get_value(borrow=True), classifier.b.get_value(borrow=True), output_folder)
+                else:
+                    plot.append('Test', numpy.NaN)
+                    plot.update_plot()
 
             if patience <= iter:
                 done_looping = True

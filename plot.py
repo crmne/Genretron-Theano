@@ -40,9 +40,11 @@ class Plot(object):
 
             i = 1
             for k, v in self.data.iteritems():
-                matplotlib.pyplot.subplot(dim_x, dim_y, i)
-                matplotlib.pyplot.plot(x, v[-1], 'r.-')
-                matplotlib.pyplot.title(k)
+                if len(v) != 0:
+                    matplotlib.pyplot.subplot(dim_x, dim_y, i)
+                    # FIXME: deal with NaNs
+                    matplotlib.pyplot.plot(x, v[-1], 'r.-')
+                    matplotlib.pyplot.title(k)
                 i = i + 1
 
             if show_plot:
