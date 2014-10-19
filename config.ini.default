@@ -1,48 +1,45 @@
 # This is the default config file for Genretron
 
 [Input]
+# This is the folder that contains the following folder structure:
+# genre1        genre2
+# | song1       | song3
+# | song2       | song4
+# Genres will be inferred from the folder structure
 AudioFolder: /path/to/audio
 
 [Spectrogram]
-WindowSize: 1024
-StepSize: 512
 # Can be square, hamming, hanning, bartlett or blackman
 WindowType: square
+WindowSize: 1024
+StepSize: 512
 FFTResolution: 1024
 
 [Tracks]
+# Tracks will be trimmed to this length
 LengthInSeconds: 29
+# The following Tracks settings are just checked against the dataset
 SampleRate: 22050
 Encoding: pcm16
 Channels: 1
-NumberOfGenres: 10
 
 [Preprocessing]
 GroundTruthPath: /path/to/ground_truth.pkl
 RawFeaturesPath: /path/to/features.h5
-NumberOfFolds: 10
-NumberOfSongsPerGenre: 10
 TrainValidTestPercentages: 80 10 10
-
-[Output]
-OutputFolder: /path/to/experiment/folder
-ShowPlot: Yes
-SavePlot: Yes
-SaveBestModel: Yes
-LogLevel: DEBUG
-SaveLog: Yes
 
 [Model]
 # Can be LogisticRegression or MultiLayerPerceptron
 Model: MultiLayerPerceptron
+# Maximum number of epochs to use for training
 NumberOfEpochs: 5000
-
 # Can be Sigmoid or ReLU
 OutputLayer: Sigmoid
+# Batch size in songs
 BatchSize: 50
-
 # Can be a number or None for random seed
 Seed: 1234
+# The gradients will be multiplied by this amount
 LearningRate: 0.01
 
 [EarlyStopping]
@@ -60,19 +57,19 @@ BeginAnneal: 500
 MinimumLearningRate: 0.00001
 DecayFactor: 1.0005
 
-[LogisticRegression]
-
 [MultiLayerPerceptron]
+# L1 L2 Regularization parameters
 L1RegularizationWeight: 0.00
 L2RegularizationWeight: 0.0001
-
 # One number per hidden layer, separated by spaces
 NumberOfNeuronsPerHiddenLayer: 50
-
 # Can be Sigmoid or ReLU or HT (Hyperbolic tangent) or Softplus or Softmax
 Activation: HT
 
-[Momentum]
-# Can be Yes or No
-UseMomentum: Yes
-MomentumRate: 0.1
+[Output]
+OutputFolder: /path/to/experiment
+ShowPlot: Yes
+SavePlot: Yes
+SaveBestModel: Yes
+LogLevel: DEBUG
+SaveLog: Yes
