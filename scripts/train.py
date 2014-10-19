@@ -6,6 +6,7 @@ import theano.tensor as T
 import logging
 import tables
 from sklearn import preprocessing
+import shutil
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -126,15 +127,26 @@ if __name__ == '__main__':
     output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
 
-    if not os.path.isdir(output_folder):
+    # Output
+    if os.path.isdir(output_folder):
+        if utils.query_yes_no("Output folder %s exists. Do you want to overwrite it?" % output_folder):
+            shutil.rmtree(output_folder)
+            os.makedirs(output_folder)
+        else:
+            raise StandardError("Output folder %s already exists." % output_folder)
+    else:
         os.makedirs(output_folder)
+
+    logging.info("Output folder: %s" % output_folder)
 
     config.copy_to(os.path.join(output_folder, 'config.ini'))
 
+    # Preprocessing
     rng = RandomState(seed)
 
     datasets = dataset_from_feature_file(features_path, rng)
 
+    # Training
     x = T.matrix('x')
     n_in = datasets[0][0].get_value(borrow=True).shape[1]
 
