@@ -1,4 +1,5 @@
 import sys
+import os
 
 
 def query_yes_no(question, default="yes"):
@@ -45,3 +46,7 @@ def find_two_closest_factors(n):
             deltas.append(delta)
             factors[delta] = (i, n/i)
     return factors[min(deltas)]
+
+
+def list_subdirs(folder):
+    return os.walk(folder).next()[1]

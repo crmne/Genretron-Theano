@@ -85,7 +85,6 @@ if __name__ == '__main__':
             tr['name'] = os.path.basename(filename)
             tr['path'] = filename
             tr['genre'] = genre
-            # tr['target'] = [gen == genre for gen in gt.genres]
             tr['target'] = gt.genres.index(genre)
             tr['spectrogram'] = sg.spectrogram
             logging.debug("Saving %s in HDF5 file." % filename)

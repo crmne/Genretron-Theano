@@ -11,6 +11,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import init
 import config
+import utils
 from logistic_regression import LogisticRegression
 from mlp import MLP
 from parameters import Parameters
@@ -111,7 +112,8 @@ if __name__ == '__main__':
     batch_size = int(conf.get('Model', 'BatchSize'))
     learning_rate = float(conf.get('Model', 'LearningRate'))
     n_epochs = int(conf.get('Model', 'NumberOfEpochs'))
-    n_genres = int(conf.get('Tracks', 'NumberOfGenres'))
+    audio_folder = os.path.expanduser(conf.get('Input', 'AudioFolder'))
+    n_genres = len(utils.list_subdirs(audio_folder))
     patience = int(conf.get('EarlyStopping', 'Patience'))
     patience_increase = int(conf.get('EarlyStopping', 'PatienceIncrease'))
     improvement_threshold = float(conf.get('EarlyStopping', 'ImprovementThreshold'))
