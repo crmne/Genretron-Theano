@@ -1,4 +1,4 @@
-# This is the default config file for Genretron.
+# This is the default config file for Genretron
 
 [Input]
 AudioFolder: /path/to/audio
@@ -26,28 +26,28 @@ TrainValidTestPercentages: 80 10 10
 
 [Output]
 OutputFolder: /path/to/experiment/folder
-Plot: Yes
-SaveBestModel: Yes
+ShowPlot: Yes
 SavePlot: Yes
+SaveBestModel: Yes
 LogLevel: DEBUG
 SaveLog: Yes
 
 [Model]
 # Can be LogisticRegression or MultiLayerPerceptron
-Model: LogisticRegression
+Model: MultiLayerPerceptron
 NumberOfEpochs: 5000
 
 # Can be Sigmoid or ReLU
 OutputLayer: Sigmoid
-BatchSize: 20
+BatchSize: 50
 
 # Can be a number or None for random seed
-Seed: None
-LearningRate: 0.002
+Seed: 1234
+LearningRate: 0.01
 
 [EarlyStopping]
 # Look at this many examples regardless
-Patience: 10000
+Patience: 5000
 # Wait this much longer when a new best is found
 PatienceIncrease: 2
 # A relative improvement of this much is considered significant
@@ -63,14 +63,14 @@ DecayFactor: 1.0005
 [LogisticRegression]
 
 [MultiLayerPerceptron]
-# One number per hidden layer, separated by spaces
-NumberOfNeuronsPerHiddenLayer: 50 50 50
+L1RegularizationWeight: 0.00
+L2RegularizationWeight: 0.0001
 
 # One number per hidden layer, separated by spaces
-DropoutRatePerHiddenLayer: 0.5 0.5 0.5
+NumberOfNeuronsPerHiddenLayer: 50
 
-# Can be Sigmoid or ReLU
-Activation: Sigmoid
+# Can be Sigmoid or ReLU or HT (Hyperbolic tangent) or Softplus or Softmax
+Activation: HT
 
 [Momentum]
 # Can be Yes or No

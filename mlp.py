@@ -15,7 +15,7 @@ class MLP(object):
     class).
     """
 
-    def __init__(self, rng, input, n_in, n_hidden, n_out, l1_reg, l2_reg):
+    def __init__(self, rng, input, n_in, n_hidden, activation, n_out, l1_reg, l2_reg):
         """Initialize the parameters for the multilayer perceptron
 
         :type rng: numpy.random.RandomState
@@ -39,8 +39,8 @@ class MLP(object):
         """
 
         logging.debug(
-            'Using MultiLayerPerceptron with %i inputs, %i hidden units, and %i outputs' %
-            (n_in, n_hidden, n_out)
+            'Using MultiLayerPerceptron with %i inputs, %i %s hidden units, and %i outputs' %
+            (n_in, n_hidden, activation, n_out)
         )
         # Since we are dealing with a one hidden layer MLP, this will translate
         # into a HiddenLayer with a tanh activation function connected to the
@@ -51,7 +51,7 @@ class MLP(object):
             input=input,
             n_in=n_in,
             n_out=n_hidden,
-            activation=T.tanh
+            activation=activation
         )
 
         # The logistic regression layer gets as input the hidden units

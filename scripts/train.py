@@ -94,6 +94,14 @@ def dataset_from_feature_file(features_path, rng):
             (valid_set_x, valid_set_y),
             (test_set_x, test_set_y)]
 
+activations = {
+    'Sigmoid': T.nnet.sigmoid,
+    'ReLU': lambda x: T.maximum(0, x),
+    'HT': T.tanh,
+    'Softplus': T.nnet.softplus,
+    'Softmax': T.nnet.softmax
+}
+
 if __name__ == '__main__':
     init.init_logger()
     init.init_theano()
@@ -110,7 +118,7 @@ if __name__ == '__main__':
     l1_reg = float(conf.get('MultiLayerPerceptron', 'L1RegularizationWeight'))
     l2_reg = float(conf.get('MultiLayerPerceptron', 'L2RegularizationWeight'))
     n_hidden = int(conf.get('MultiLayerPerceptron', 'NumberOfNeuronsPerHiddenLayer'))  # FIXME: only one layer is supported now
-    activation = conf.get('MultiLayerPerceptron', 'Activation')  # TODO
+    activation = conf.get('MultiLayerPerceptron', 'Activation')
     seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))
     save_best_model = True if conf.get('Output', 'SaveBestModel') else False
     output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
@@ -137,6 +145,7 @@ if __name__ == '__main__':
         input=x,
         n_in=n_in,
         n_hidden=n_hidden,
+        activation=activations[activation],
         n_out=n_genres,
         l1_reg=l1_reg,
         l2_reg=l2_reg
