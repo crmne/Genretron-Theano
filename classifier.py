@@ -4,6 +4,7 @@ import theano
 import theano.tensor as T
 import logging
 from plot import Plot
+from parameters import Parameters
 
 
 class Classifier(object):
@@ -97,93 +98,88 @@ class Classifier(object):
         # validation set; in this case we check every epoch
         validation_frequency = min(self.n_train_batches, patience / 2)
 
-        # best_params = None
+        best_params = None
         best_validation_loss = numpy.inf
         test_score = 0.
         start_time = time.clock()
 
         done_looping = False
         epoch = 0
-        while (epoch < n_epochs) and (not done_looping):
-            epoch = epoch + 1
-            for minibatch_index in xrange(self.n_train_batches):
+        try:
+            while (epoch < n_epochs) and (not done_looping):
+                epoch = epoch + 1
+                for minibatch_index in xrange(self.n_train_batches):
 
-                minibatch_avg_cost = self.train_model(minibatch_index)
-                # iteration number
-                iter = (epoch - 1) * self.n_train_batches + minibatch_index
+                    minibatch_avg_cost = self.train_model(minibatch_index)
+                    # iteration number
+                    iter = (epoch - 1) * self.n_train_batches + minibatch_index
 
-                if (iter + 1) % validation_frequency == 0:
-                    # compute zero-one loss on validation set
-                    validation_losses = [self.validate_model(i)
-                                         for i in xrange(self.n_valid_batches)]
-                    this_validation_loss = numpy.mean(validation_losses)
-
-                    logging.info(
-                        'epoch %i, minibatch %i/%i, validation error %f %%' %
-                        (
-                            epoch,
-                            minibatch_index + 1,
-                            self.n_train_batches,
-                            this_validation_loss * 100.
-                        )
-                    )
-
-                    plot.append('Validation', this_validation_loss)
-                    plot.update_plot()
-
-                    # if we got the best validation score until now
-                    if this_validation_loss < best_validation_loss:
-                        # improve patience if loss improvement is good enough
-                        if this_validation_loss < best_validation_loss *  \
-                           improvement_threshold:
-                            patience = max(patience, iter * patience_increase)
-
-                        best_validation_loss = this_validation_loss
-
-                        # test it on the test set
-                        test_losses = [self.test_model(i)
-                                       for i in xrange(self.n_test_batches)]
-                        test_score = numpy.mean(test_losses)
+                    if (iter + 1) % validation_frequency == 0:
+                        # compute zero-one loss on validation set
+                        validation_losses = [self.validate_model(i)
+                                             for i in xrange(self.n_valid_batches)]
+                        this_validation_loss = numpy.mean(validation_losses)
 
                         logging.info(
-                            '     epoch %i, minibatch %i/%i test error of best model %f %%' %
+                            'epoch %i, minibatch %i/%i, validation error %f %%' %
                             (
                                 epoch,
                                 minibatch_index + 1,
                                 self.n_train_batches,
-                                test_score * 100.
+                                this_validation_loss * 100.
                             )
                         )
 
-                        plot.append('Test', test_score)
+                        plot.append('Validation', this_validation_loss)
                         plot.update_plot()
 
-                        # if save_best_model:
-                        #     save_best_parameters(
-                        #         classifier.W.get_value(borrow=True),
-                        #         classifier.b.get_value(borrow=True),
-                        #         output_folder
-                        #     )
-                    else:
-                        plot.append('Test', numpy.NaN)
-                        plot.update_plot()
+                        # if we got the best validation score until now
+                        if this_validation_loss < best_validation_loss:
+                            # improve patience if loss improvement is good enough
+                            if this_validation_loss < best_validation_loss *  \
+                               improvement_threshold:
+                                patience = max(patience, iter * patience_increase)
 
-                if patience <= iter:
-                    done_looping = True
-                    break
+                            best_validation_loss = this_validation_loss
 
-        end_time = time.clock()
-        logging.info(
-            'Optimization complete with best validation score of %f %%, ' +
-            'with test performance %f %%' %
-            (best_validation_loss * 100., test_score * 100.))
-        logging.info(
-            'The code run for %d epochs, with %f epochs/sec' %
-            (epoch, 1. * epoch / (end_time - start_time)))
-        # logging.info(
-        #     'The code for file ' +
-        #     os.path.split(__file__)[1] +
-        #     ' ran for %.1fs' % (end_time - start_time))
+                            # test it on the test set
+                            test_losses = [self.test_model(i)
+                                           for i in xrange(self.n_test_batches)]
+                            test_score = numpy.mean(test_losses)
+
+                            logging.info(
+                                '     epoch %i, minibatch %i/%i test error of best model %f %%' %
+                                (
+                                    epoch,
+                                    minibatch_index + 1,
+                                    self.n_train_batches,
+                                    test_score * 100.
+                                )
+                            )
+
+                            plot.append('Test', test_score)
+                            plot.update_plot()
+
+                            best_params = Parameters(self.classifier.W.get_value(borrow=True), self.classifier.b.get_value(borrow=True))
+                        else:
+                            plot.append('Test', numpy.NaN)
+                            plot.update_plot()
+
+                    if patience <= iter:
+                        done_looping = True
+                        break
+
+        finally:
+            if best_params is not None:
+                best_params.save()
+            plot.save_plot()
+            end_time = time.clock()
+            logging.info(
+                'Optimization complete with best validation score of %f %%, with test performance %f %%' %
+                (best_validation_loss * 100., test_score * 100.))
+            logging.info(
+                'The code run for %d epochs, with %f epochs/sec' %
+                (epoch, 1. * epoch / (end_time - start_time)))
 
     def predict(self):
         raise NotImplementedError

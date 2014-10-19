@@ -1,3 +1,4 @@
+import os
 import config
 import utils
 
@@ -50,7 +51,11 @@ class Plot(object):
             if show_plot:
                 matplotlib.pyplot.draw()
 
-    def save_plot(self, output_file, format='PDF'):
+    def save_plot(self, format='PDF'):
+        output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
+        output_file = os.path.join(output_folder, 'plot.' + format)
         self.update_plot()
         if save_plot:
+            import logging
+            logging.info("Plot saved in %s" % output_file)
             matplotlib.pyplot.savefig(output_file, format=format)
