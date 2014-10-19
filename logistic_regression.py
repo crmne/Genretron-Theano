@@ -35,6 +35,8 @@ References:
 """
 __docformat__ = 'restructedtext en'
 
+import logging
+
 import numpy
 
 import theano
@@ -67,6 +69,10 @@ class LogisticRegression(object):
                       which the labels lie
 
         """
+        logging.debug(
+            'Using LogisticRegression with %i inputs and %i outputs' %
+            (n_in, n_out)
+        )
 
         # initialize with 0 the weights W as a matrix of shape (n_in, n_out)
         self.W = theano.shared(value=numpy.zeros((n_in, n_out),
@@ -137,3 +143,18 @@ class LogisticRegression(object):
             return T.mean(T.neq(self.y_pred, y))
         else:
             raise NotImplementedError()
+
+    def updates(self, cost, learning_rate):
+        # compute the gradient of cost with respect to theta = (W,b)
+        g_W = T.grad(cost=cost, wrt=self.W)
+        g_b = T.grad(cost=cost, wrt=self.b)
+
+        # specify how to update the parameters of the model as a list of
+        # (variable, update expression) pairs.
+        return [
+            (self.W, self.W - learning_rate * g_W),
+            (self.b, self.b - learning_rate * g_b)
+        ]
+
+    def cost(self, y):
+        return self.negative_log_likelihood(y)

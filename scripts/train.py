@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import time
 import numpy
 from numpy.random import RandomState
 import theano
@@ -13,8 +12,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import init
 import config
 from logistic_regression import LogisticRegression
+from mlp import MLP
 from parameters import Parameters
-from plot import Plot
+from classifier import Classifier
 
 
 def load_features(features_path):
@@ -63,7 +63,7 @@ def save_plot():
     raise NotImplementedError
 
 
-def prepare_dataset_from_feature_file(features_path, rng):
+def dataset_from_feature_file(features_path, rng):
     # This function exists to let the garbage collector remove X and Y from
     # memory
     features = load_features(features_path)
@@ -98,6 +98,7 @@ if __name__ == '__main__':
     init.init_logger()
     init.init_theano()
     conf = config.get_config()
+    model = conf.get('Model', 'Model')
     train_valid_test_ratios = [int(x) for x in conf.get('Preprocessing', 'TrainValidTestPercentages').split(' ')]
     batch_size = int(conf.get('Model', 'BatchSize'))
     learning_rate = float(conf.get('Model', 'LearningRate'))
@@ -106,158 +107,44 @@ if __name__ == '__main__':
     patience = int(conf.get('EarlyStopping', 'Patience'))
     patience_increase = int(conf.get('EarlyStopping', 'PatienceIncrease'))
     improvement_threshold = float(conf.get('EarlyStopping', 'ImprovementThreshold'))
+    l1_reg = float(conf.get('MultiLayerPerceptron', 'L1RegularizationWeight'))
+    l2_reg = float(conf.get('MultiLayerPerceptron', 'L2RegularizationWeight'))
+    n_hidden = int(conf.get('MultiLayerPerceptron', 'NumberOfNeuronsPerHiddenLayer'))  # FIXME: only one layer is supported now
+    activation = conf.get('MultiLayerPerceptron', 'Activation')  # TODO
     seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))
     save_best_model = True if conf.get('Output', 'SaveBestModel') else False
     output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
 
-    # Output
     if not os.path.isdir(output_folder):
         os.makedirs(output_folder)
 
     config.copy_to(os.path.join(output_folder, 'config.ini'))
 
-    plot = Plot('Validation', 'Test')
-
     rng = RandomState(seed)
 
-    datasets = prepare_dataset_from_feature_file(features_path, rng)
+    datasets = dataset_from_feature_file(features_path, rng)
 
-    train_set_x, train_set_y = datasets[0]
-    valid_set_x, valid_set_y = datasets[1]
-    test_set_x, test_set_y = datasets[2]
-
-    # compute number of minibatches for training, validation and testing
-    n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-    n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-    n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
-
-    logging.debug('Train batches = %i, Valid batches = %i, Test batches = %i' %
-        (n_train_batches, n_valid_batches, n_test_batches))
-
-    ###############
-    # BUILD MODEL #
-    ###############
-    logging.info("Building the model...")
-
-    index = T.lscalar()
     x = T.matrix('x')
-    y = T.ivector('y')
+    n_in = datasets[0][0].get_value(borrow=True).shape[1]
 
-    n_in = train_set_x.get_value(borrow=True).shape[1]
-    classifier = LogisticRegression(input=x, n_in=n_in, n_out=n_genres)
-    logging.debug("Using LogisticRegression with %i inputs and %i outputs" % (n_in, n_genres))
-
-    cost = classifier.negative_log_likelihood(y)
-
-    test_model = theano.function(
-        inputs=[index],
-        outputs=classifier.errors(y),
-        givens={
-            x: test_set_x[index * batch_size: (index + 1) * batch_size],
-            y: test_set_y[index * batch_size: (index + 1) * batch_size]})
-
-    validate_model = theano.function(
-        inputs=[index],
-        outputs=classifier.errors(y),
-        givens={
-            x: valid_set_x[index * batch_size:(index + 1) * batch_size],
-            y: valid_set_y[index * batch_size:(index + 1) * batch_size]})
-
-    # compute the gradient of cost with respect to theta = (W,b)
-    g_W = T.grad(cost=cost, wrt=classifier.W)
-    g_b = T.grad(cost=cost, wrt=classifier.b)
-
-    # specify how to update the parameters of the model as a list of
-    # (variable, update expression) pairs.
-    updates = [(classifier.W, classifier.W - learning_rate * g_W),
-               (classifier.b, classifier.b - learning_rate * g_b)]
-
-    # compiling a Theano function `train_model` that returns the cost, but in
-    # the same time updates the parameter of the model based on the rules
-    # defined in `updates`
-    train_model = theano.function(
-        inputs=[index],
-        outputs=cost,
-        updates=updates,
-        givens={
-            x: train_set_x[index * batch_size:(index + 1) * batch_size],
-            y: train_set_y[index * batch_size:(index + 1) * batch_size]})
-
-    ###############
-    # TRAIN MODEL #
-    ###############
-    logging.info('Training the model...')
-    # go through this many minibatches before checking the network on the validation set; in this case we check every epoch
-    validation_frequency = min(n_train_batches, patience / 2)
-
-    best_params = None
-    best_validation_loss = numpy.inf
-    test_score = 0.
-    start_time = time.clock()
-
-    done_looping = False
-    epoch = 0
-    while (epoch < n_epochs) and (not done_looping):
-        epoch = epoch + 1
-        for minibatch_index in xrange(n_train_batches):
-
-            minibatch_avg_cost = train_model(minibatch_index)
-            # iteration number
-            iter = (epoch - 1) * n_train_batches + minibatch_index
-
-            if (iter + 1) % validation_frequency == 0:
-                # compute zero-one loss on validation set
-                validation_losses = [validate_model(i)
-                                     for i in xrange(n_valid_batches)]
-                this_validation_loss = numpy.mean(validation_losses)
-
-                logging.info(
-                    'epoch %i, minibatch %i/%i, validation error %f %%' %
-                    (epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
-
-                plot.append('Validation', this_validation_loss)
-                plot.update_plot()
-
-                # if we got the best validation score until now
-                if this_validation_loss < best_validation_loss:
-                    # improve patience if loss improvement is good enough
-                    if this_validation_loss < best_validation_loss *  \
-                       improvement_threshold:
-                        patience = max(patience, iter * patience_increase)
-
-                    best_validation_loss = this_validation_loss
-
-                    # test it on the test set
-                    test_losses = [test_model(i)
-                                   for i in xrange(n_test_batches)]
-                    test_score = numpy.mean(test_losses)
-
-                    logging.info(
-                        '     epoch %i, minibatch %i/%i, test error of best model %f %%' %
-                        (epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
-
-                    plot.append('Test', test_score)
-                    plot.update_plot()
-
-                    if save_best_model:
-                        save_best_parameters(classifier.W.get_value(borrow=True), classifier.b.get_value(borrow=True), output_folder)
-                else:
-                    plot.append('Test', numpy.NaN)
-                    plot.update_plot()
-
-            if patience <= iter:
-                done_looping = True
-                break
-
-    end_time = time.clock()
-    logging.info(
-        'Optimization complete with best validation score of %f %%, with test performance %f %%' %
-        (best_validation_loss * 100., test_score * 100.))
-    logging.info(
-        'The code run for %d epochs, with %f epochs/sec' % (
-        epoch, 1. * epoch / (end_time - start_time)))
-    logging.info(
-        'The code for file ' +
-        os.path.split(__file__)[1] +
-        ' ran for %.1fs' % (end_time - start_time))
+    actual_classifier = LogisticRegression(
+        input=x,
+        n_in=n_in,
+        n_out=n_genres
+    ) if model == 'LogisticRegression' else MLP(
+        rng=rng,
+        input=x,
+        n_in=n_in,
+        n_hidden=n_hidden,
+        n_out=n_genres,
+        l1_reg=l1_reg,
+        l2_reg=l2_reg
+    )
+    classifier = Classifier(actual_classifier, x, batch_size, learning_rate, datasets)
+    classifier.train(
+        patience,
+        patience_increase,
+        n_epochs,
+        improvement_threshold
+    )
