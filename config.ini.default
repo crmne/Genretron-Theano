@@ -33,8 +33,6 @@ TrainValidTestPercentages: 80 10 10
 Model: MultiLayerPerceptron
 # Maximum number of epochs to use for training
 NumberOfEpochs: 5000
-# Can be Sigmoid or ReLU
-OutputLayer: Sigmoid
 # Batch size in songs
 BatchSize: 50
 # Can be a number or None for random seed
@@ -49,13 +47,6 @@ Patience: 5000
 PatienceIncrease: 2
 # A relative improvement of this much is considered significant
 ImprovementThreshold: 0.995
-
-[LearningRateUpdate]
-# Can be Exponential or Annealed
-UpdateType: Exponential
-BeginAnneal: 500
-MinimumLearningRate: 0.00001
-DecayFactor: 1.0005
 
 [MultiLayerPerceptron]
 # L1 L2 Regularization parameters
