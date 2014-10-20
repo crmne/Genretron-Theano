@@ -62,5 +62,4 @@ OutputFolder: /path/to/experiment
 ShowPlot: Yes
 SavePlot: Yes
 SaveBestModel: Yes
-LogLevel: DEBUG
-SaveLog: Yes
+ConsoleLogLevel: DEBUG

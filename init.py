@@ -29,7 +29,7 @@ def init_output():
 
 def init_logger():
     conf = config.get_config()
-    log_level = conf.get('Output', 'LogLevel')
+    log_level = conf.get('Output', 'ConsoleLogLevel')
     output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
     log_file = os.path.join(output_folder, 'experiment.log')
     logging.basicConfig(
