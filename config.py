@@ -1,58 +1,47 @@
+import argparse
 import shutil
 import filecmp
 import os.path
 import ConfigParser
 
-path_to_default_config = os.path.join(
-    os.path.dirname(__file__),
-    'config.ini.default'
-)
-path_to_config = os.path.join(
-    os.path.dirname(__file__),
-    'config.ini'
-)
-
 config = None
 
 
-def config_not_found():
-    shutil.copyfile(path_to_default_config, path_to_config)
-    raise StandardError(
-        "%s not found. We created one for you. Please go and edit it."
-        % path_to_config)
-
-
-def default_config_not_changed():
-    raise StandardError(
-        "Looks like %s has not been changed from default values. Please go and edit it."
-        % path_to_config)
-
-
-def process_config():
+def get_config():
     global config
-    config = ConfigParser.ConfigParser()
-    config.read(path_to_config)
-    return config
-
-
-def print_config():
-    config = get_config()
-    for section in config.sections():
-        print("[%s]: %s" % (section, dict(config.items(section))))
-
-
-def get_config(refresh=False):
-    if config is None or refresh is True:
-        if os.path.isfile(path_to_config):
-            if filecmp.cmp(path_to_config, path_to_default_config):
-                default_config_not_changed()
-            else:
-                return process_config()
-        else:
-            config_not_found()
-    else:
-        return config
+    if config is None:
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-c", "--config", required=False)
+        config = Config(parser.parse_args().config)
+    return config.config
 
 
 def copy_to(filename):
-    shutil.copyfile(path_to_config, filename)
+    global config
+    if config is not None:
+        config.copy_to(filename)
+
+
+class Config(object):
+    path_to_default_config = os.path.join(os.path.dirname(__file__), 'config.ini.default')
+
+    def __init__(self, path=None):
+        if path is None:
+            path = os.path.join(os.path.dirname(__file__), 'config.ini')
+        else:
+            path = os.path.abspath(path)
+        if os.path.isfile(path):
+            if filecmp.cmp(path, Config.path_to_default_config):
+                raise StandardError("Looks like %s has not been changed from default values. Please go and edit it." % path)
+        else:
+            shutil.copyfile(Config.path_to_default_config, path)
+            raise StandardError("%s not found. We created it for you. Please go and edit it." % path)
+
+        print("Using config %s" % path)
+        self.path = path
+
+        self.config = ConfigParser.ConfigParser()
+        self.config.read(path)
+
+    def copy_to(self, filename):
+        shutil.copyfile(self.path, filename)
