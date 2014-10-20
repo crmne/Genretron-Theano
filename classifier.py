@@ -160,7 +160,10 @@ class Classifier(object):
                             plot.append('Test', test_score)
                             plot.update_plot()
 
-                            best_params = Parameters(self.classifier.W.get_value(borrow=True), self.classifier.b.get_value(borrow=True))
+                            best_params = Parameters(
+                                self.classifier.params,
+                                type(self.classifier).__name__
+                            )
                         else:
                             plot.append('Test', numpy.NaN)
                             plot.update_plot()

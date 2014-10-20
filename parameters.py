@@ -1,22 +1,22 @@
 import cPickle as pickle
-import numpy
+import theano
 
 
 class Parameters(object):
 
-    def __init__(self, W, b):
-        assert type(W) == numpy.ndarray
-        assert type(b) == numpy.ndarray
-        self.W = W
-        self.b = b
+    def __init__(self, params, classifier_name):
+        assert isinstance(params[0], theano.tensor.sharedvar.TensorSharedVariable)
+        assert isinstance(classifier_name, str)
+        self.params = params
+        self.classifier_name = classifier_name
 
     @classmethod
     def load_from_pickle_file(cls, filename):
         params = pickle.load(open(filename, "rb"))
-        return cls(params['W'], params['b'])
+        return cls(params['params'], params['classifier_name'])
 
     def save_to_pickle_file(self, filename):
-        params = {'W': self.W, 'b': self.b}
+        params = {'params': self.params, 'classifier_name': self.classifier_name}
         pickle.dump(params, open(filename, "wb"))
 
     def save(self):
