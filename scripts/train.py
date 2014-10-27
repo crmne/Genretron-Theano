@@ -60,10 +60,6 @@ def save_best_parameters(W, b, output_folder):
     params.save_to_pickle_file(params_path)
 
 
-def save_plot():
-    raise NotImplementedError
-
-
 def dataset_from_feature_file(features_path, rng):
     # This function exists to let the garbage collector remove X and Y from
     # memory
@@ -75,16 +71,17 @@ def dataset_from_feature_file(features_path, rng):
 
     logging.info("Preprocessing data...")
     logging.debug("Reshaping...")
-    X_reshaped = numpy.reshape(X, (X.shape[0], X.shape[1] * X.shape[2]))
+    X_reshaped = numpy.reshape(X, (X.shape[0] * X.shape[1], X.shape[2]))
+    Y_reshaped = numpy.repeat(Y, X.shape[1], axis=0)
     logging.debug("Scaling...")
-    preprocessing.StandardScaler(copy=False).fit_transform(X_reshaped, Y)
+    preprocessing.StandardScaler(copy=False).fit_transform(X_reshaped)
 
     logging.debug("Shuffling...")
-    shuffle_in_unison(X_reshaped, Y, rng)
+    shuffle_in_unison(X_reshaped, Y_reshaped, rng)
 
     logging.debug("Splitting...")
     (train_x, valid_x, test_x), (train_y, valid_y, test_y) = split_dataset(
-        X_reshaped, Y, train_valid_test_ratios)
+        X_reshaped, Y_reshaped, train_valid_test_ratios)
 
     logging.debug("Loading into Theano shared variables...")
     borrow = False
