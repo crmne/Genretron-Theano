@@ -14,7 +14,6 @@ import config
 import utils
 from logistic_regression import LogisticRegression
 from mlp import MLP
-from parameters import Parameters
 from classifier import Classifier
 
 
@@ -53,35 +52,22 @@ def shared_dataset(data_x, data_y, borrow):
     return shared_x, shared_y
 
 
-def save_best_parameters(W, b, output_folder):
-    params = Parameters(W, b)
-    params_path = os.path.join(output_folder, 'parameters.pkl')
-    logging.debug("Saving best parameters in %s..." % params_path)
-    params.save_to_pickle_file(params_path)
-
-
-def dataset_from_feature_file(features_path, rng):
-    # This function exists to let the garbage collector remove X and Y from
-    # memory
-    features = load_features(features_path)
-    feature_slice = features.root.track[:]
-    features.close()
-    X = feature_slice['spectrogram']
-    Y = feature_slice['target'].astype(numpy.int32)
-
-    logging.info("Preprocessing data...")
+def preprocess(X, Y):
     logging.debug("Reshaping...")
     X_reshaped = numpy.reshape(X, (X.shape[0] * X.shape[1], X.shape[2]))
     Y_reshaped = numpy.repeat(Y, X.shape[1], axis=0)
     logging.debug("Scaling...")
-    preprocessing.StandardScaler(copy=False).fit_transform(X_reshaped)
+    scaler = preprocessing.StandardScaler(copy=False)
+    scaler.fit(X_reshaped)
+    scaler.transform(X_reshaped)
 
-    logging.debug("Shuffling...")
-    shuffle_in_unison(X_reshaped, Y_reshaped, rng)
+    return X_reshaped, Y_reshaped
 
+
+def split_and_load_into_theano(X, Y):
     logging.debug("Splitting...")
     (train_x, valid_x, test_x), (train_y, valid_y, test_y) = split_dataset(
-        X_reshaped, Y_reshaped, train_valid_test_ratios)
+        X, Y, train_valid_test_ratios)
 
     logging.debug("Loading into Theano shared variables...")
     borrow = False
@@ -91,6 +77,51 @@ def dataset_from_feature_file(features_path, rng):
     return [(train_set_x, train_set_y),
             (valid_set_x, valid_set_y),
             (test_set_x, test_set_y)]
+
+
+def save_preprocessed(_X, _Y, preprocessed_path):
+    h5file = tables.open_file(preprocessed_path, mode='w', title='Preprocessed')
+
+    class Data(tables.IsDescription):
+        X = tables.Float32Col(shape=_X.shape[1])
+        Y = tables.Int32Col(shape=())
+
+    table = h5file.create_table('/', 'data', Data, "Data")
+    tr = table.row
+    for i in xrange(_X.shape[0]):
+        tr['X'] = _X[i]
+        tr['Y'] = _Y[i]
+        tr.append()
+
+    h5file.close()
+
+
+def load_dataset_and_preprocess(preprocessed_path, features_path):
+    X, Y = None, None
+    if os.path.isfile(preprocessed_path):
+        features = load_features(preprocessed_path)
+        feature_slice = features.root.data[:]
+        features.close()
+
+        X = feature_slice['X']
+        Y = feature_slice['Y']
+    else:
+        features = load_features(features_path)
+        feature_slice = features.root.track[:]
+        features.close()
+
+        logging.info("Preprocessing data...")
+        X, Y = preprocess(
+            feature_slice['spectrogram'],
+            feature_slice['target'].astype(numpy.int32)
+        )
+        logging.info("Saving preprocessed data...")
+        save_preprocessed(X, Y, preprocessed_path)
+
+    logging.debug("Shuffling...")
+    shuffle_in_unison(X, Y, rng)
+
+    return split_and_load_into_theano(X, Y)
 
 activations = {
     'Sigmoid': T.nnet.sigmoid,
@@ -123,6 +154,7 @@ if __name__ == '__main__':
     save_best_model = True if conf.get('Output', 'SaveBestModel') else False
     output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
+    preprocessed_path = os.path.expanduser(conf.get('Preprocessing', 'PreprocessedFeaturesPath'))
 
     logging.info("Output folder: %s" % output_folder)
 
@@ -131,7 +163,7 @@ if __name__ == '__main__':
     # Preprocessing
     rng = RandomState(seed)
 
-    datasets = dataset_from_feature_file(features_path, rng)
+    datasets = load_dataset_and_preprocess(preprocessed_path, features_path)
 
     # Training
     x = T.matrix('x')
