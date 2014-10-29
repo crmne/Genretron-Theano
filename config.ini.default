@@ -26,6 +26,7 @@ Channels: 1
 [Preprocessing]
 GroundTruthPath: /path/to/ground_truth.pkl
 RawFeaturesPath: /path/to/features.h5
+PreprocessedFeaturesPath: /path/to/preprocessed_features.h5
 TrainValidTestPercentages: 80 10 10
 
 [Model]
