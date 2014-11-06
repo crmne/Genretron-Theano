@@ -31,23 +31,28 @@ TrainValidTestPercentages: 80 10 10
 
 [Model]
 # Can be LogisticRegression or MultiLayerPerceptron
-Model: MultiLayerPerceptron
+Model: LogisticRegression
 # Maximum number of epochs to use for training
 NumberOfEpochs: 5000
-# Batch size in songs
-BatchSize: 50
+# Batch size in frames
+BatchSize: 124700
 # Can be a number or None for random seed
 Seed: 1234
 # The gradients will be multiplied by this amount
 LearningRate: 0.01
 
+[CrossValidation]
+NumberOfFolds: 4
+# Can go from 1 to $NumberOfFolds
+RunNumber: 1
+
 [EarlyStopping]
-# Look at this many examples regardless
-Patience: 5000
+# Look at this many minibatches regardless
+Patience: 16000
 # Wait this much longer when a new best is found
 PatienceIncrease: 2
 # A relative improvement of this much is considered significant
-ImprovementThreshold: 0.995
+ImprovementThreshold: 0.999
 
 [MultiLayerPerceptron]
 # L1 L2 Regularization parameters
@@ -60,7 +65,7 @@ Activation: HT
 
 [Output]
 OutputFolder: /path/to/experiment
-ShowPlot: Yes
+ShowPlot: No
 SavePlot: Yes
 SaveBestModel: Yes
 ConsoleLogLevel: DEBUG

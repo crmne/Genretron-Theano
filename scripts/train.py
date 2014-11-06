@@ -15,34 +15,12 @@ import utils
 from logistic_regression import LogisticRegression
 from mlp import MLP
 from classifier import Classifier
+from cross_validation import KFold
 
 
 def load_features(features_path):
     logging.info("Loading Features from %s..." % features_path)
     return tables.open_file(features_path, 'r')
-
-
-def shuffle_in_unison(x, y, rng):
-    logging.debug("Seed = %i" % rng.get_state()[1][0])
-    rng_state = rng.get_state()
-    rng.shuffle(x)
-    rng.set_state(rng_state)
-    rng.shuffle(y)
-    rng.set_state(rng_state)
-
-
-def split_dataset(data_x, data_y, ratios):
-    assert sum(ratios) == 100
-    split_points = []
-    for ratio in ratios:
-        prev = 0
-        if len(split_points) != 0:
-            prev = split_points[-1]
-        split_points.append((len(data_x) * ratio / 100) + prev)
-    logging.debug("Split points = %s" % split_points[:-1])
-    xs = numpy.split(data_x, split_points[:-1])
-    ys = numpy.split(data_y, split_points[:-1])
-    return xs, ys
 
 
 def shared_dataset(data_x, data_y, borrow):
@@ -64,10 +42,22 @@ def preprocess(X, Y):
     return X_reshaped, Y_reshaped
 
 
-def split_and_load_into_theano(X, Y):
-    logging.debug("Splitting...")
-    (train_x, valid_x, test_x), (train_y, valid_y, test_y) = split_dataset(
-        X, Y, train_valid_test_ratios)
+def split_and_load_into_theano(X, Y, rng):
+    idxs = numpy.arange(X.shape[0])
+    rng.shuffle(idxs)
+
+    logging.debug("Creating folds...")
+    n_folds = int(conf.get('CrossValidation', 'NumberOfFolds'))
+    run_n = int(conf.get('CrossValidation', 'RunNumber'))
+    kf = KFold(idxs, n_folds=n_folds)
+    run = kf.runs[run_n - 1]
+
+    train_x = numpy.take(X, run['Train'], axis=0)
+    train_y = numpy.take(Y, run['Train'], axis=0)
+    valid_x = numpy.take(X, run['Valid'], axis=0)
+    valid_y = numpy.take(Y, run['Valid'], axis=0)
+    test_x = numpy.take(X, run['Test'], axis=0)
+    test_y = numpy.take(Y, run['Test'], axis=0)
 
     logging.debug("Loading into Theano shared variables...")
     borrow = False
@@ -96,7 +86,7 @@ def save_preprocessed(_X, _Y, preprocessed_path):
     h5file.close()
 
 
-def load_dataset_and_preprocess(preprocessed_path, features_path):
+def load_dataset_and_preprocess(preprocessed_path, features_path, rng):
     X, Y = None, None
     if os.path.isfile(preprocessed_path):
         features = load_features(preprocessed_path)
@@ -118,10 +108,7 @@ def load_dataset_and_preprocess(preprocessed_path, features_path):
         logging.info("Saving preprocessed data...")
         save_preprocessed(X, Y, preprocessed_path)
 
-    logging.debug("Shuffling...")
-    shuffle_in_unison(X, Y, rng)
-
-    return split_and_load_into_theano(X, Y)
+    return split_and_load_into_theano(X, Y, rng)
 
 activations = {
     'Sigmoid': T.nnet.sigmoid,
@@ -163,7 +150,7 @@ if __name__ == '__main__':
     # Preprocessing
     rng = RandomState(seed)
 
-    datasets = load_dataset_and_preprocess(preprocessed_path, features_path)
+    datasets = load_dataset_and_preprocess(preprocessed_path, features_path, rng)
 
     # Training
     x = T.matrix('x')
