@@ -164,18 +164,18 @@ class Classifier(object):
                                 self.classifier.params,
                                 type(self.classifier).__name__
                             )
+                            best_params.save()
                         else:
                             plot.append('Test', numpy.NaN)
                             plot.update_plot()
+
+                        plot.save_plot()
 
                     if patience <= iter:
                         done_looping = True
                         break
 
         finally:
-            if best_params is not None:
-                best_params.save()
-            plot.save_plot()
             end_time = time.clock()
             logging.info(
                 'Optimization complete with best validation score of %f %%, with test performance %f %%' %
