@@ -151,7 +151,7 @@ if __name__ == '__main__':
     n_hidden = int(conf.get('MultiLayerPerceptron', 'NumberOfNeuronsPerHiddenLayer'))  # FIXME: only one layer is supported now
     activation = conf.get('MultiLayerPerceptron', 'Activation')
     seed = None if conf.get('Model', 'Seed') == 'None' else int(conf.get('Model', 'Seed'))
-    save_best_model = True if conf.get('Output', 'SaveBestModel') else False
+    save_best_model = True if conf.get('Output', 'SaveBestModel') == 'Yes' else False
     output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
     preprocessed_path = os.path.expanduser(conf.get('Preprocessing', 'PreprocessedFeaturesPath'))
