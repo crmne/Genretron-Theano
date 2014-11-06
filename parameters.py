@@ -40,5 +40,5 @@ class Parameters(object):
             output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
             output_file = os.path.join(output_folder, 'parameters.pkl')
             import logging
-            logging.info("Parameters and error scores saved in %s" % output_file)
+            logging.debug("Parameters and error scores saved in %s" % output_file)
             self.save_to_pickle_file(output_file)

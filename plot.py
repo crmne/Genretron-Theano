@@ -57,5 +57,5 @@ class Plot(object):
         self.update_plot()
         if save_plot:
             import logging
-            logging.info("Plot saved in %s" % output_file)
+            logging.debug("Plot saved in %s" % output_file)
             matplotlib.pyplot.savefig(output_file, format=format)
