@@ -4,19 +4,31 @@ import theano
 
 class Parameters(object):
 
-    def __init__(self, params, classifier_name):
+    def __init__(self, params, classifier_name, validation_error, test_error):
         assert isinstance(params[0], theano.tensor.sharedvar.TensorSharedVariable)
         assert isinstance(classifier_name, str)
         self.params = params
         self.classifier_name = classifier_name
+        self.validation_error = validation_error
+        self.test_error = test_error
 
     @classmethod
     def load_from_pickle_file(cls, filename):
         params = pickle.load(open(filename, "rb"))
-        return cls(params['params'], params['classifier_name'])
+        return cls(
+            params['params'],
+            params['classifier_name'],
+            params['validation_error'],
+            params['test_error']
+        )
 
     def save_to_pickle_file(self, filename):
-        params = {'params': self.params, 'classifier_name': self.classifier_name}
+        params = {
+            'params': self.params,
+            'classifier_name': self.classifier_name,
+            'validation_error': self.validation_error,
+            'test_error': self.test_error
+        }
         pickle.dump(params, open(filename, "wb"))
 
     def save(self):
@@ -28,5 +40,5 @@ class Parameters(object):
             output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
             output_file = os.path.join(output_folder, 'parameters.pkl')
             import logging
-            logging.info("Parameters saved in %s" % output_file)
+            logging.info("Parameters and error scores saved in %s" % output_file)
             self.save_to_pickle_file(output_file)

@@ -162,7 +162,9 @@ class Classifier(object):
 
                             best_params = Parameters(
                                 self.classifier.params,
-                                type(self.classifier).__name__
+                                type(self.classifier).__name__,
+                                best_validation_loss,
+                                test_score
                             )
                             best_params.save()
                         else:
