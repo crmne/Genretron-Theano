@@ -42,25 +42,9 @@ def preprocess(X, Y):
     return X_reshaped, Y_reshaped
 
 
-def split_and_load_into_theano(X, Y, rng):
-    idxs = numpy.arange(X.shape[0])
-    rng.shuffle(idxs)
-
-    logging.debug("Creating folds...")
-    n_folds = int(conf.get('CrossValidation', 'NumberOfFolds'))
-    run_n = int(conf.get('CrossValidation', 'RunNumber'))
-    kf = KFold(idxs, n_folds=n_folds)
-    run = kf.runs[run_n - 1]
-
-    train_x = numpy.take(X, run['Train'], axis=0)
-    train_y = numpy.take(Y, run['Train'], axis=0)
-    valid_x = numpy.take(X, run['Valid'], axis=0)
-    valid_y = numpy.take(Y, run['Valid'], axis=0)
-    test_x = numpy.take(X, run['Test'], axis=0)
-    test_y = numpy.take(Y, run['Test'], axis=0)
-
+def load_into_theano(train_x, train_y, valid_x, valid_y, test_x, test_y):
     logging.debug("Loading into Theano shared variables...")
-    borrow = False
+    borrow = True
     train_set_x, train_set_y = shared_dataset(train_x, train_y, borrow=borrow)
     valid_set_x, valid_set_y = shared_dataset(valid_x, valid_y, borrow=borrow)
     test_set_x, test_set_y = shared_dataset(test_x, test_y, borrow=borrow)
@@ -108,7 +92,29 @@ def load_dataset_and_preprocess(preprocessed_path, features_path, rng):
         logging.info("Saving preprocessed data...")
         save_preprocessed(X, Y, preprocessed_path)
 
-    return split_and_load_into_theano(X, Y, rng)
+    idxs = numpy.arange(X.shape[0])
+    logging.debug("Shuffling indices...")
+    rng.shuffle(idxs)
+
+    logging.debug("Creating folds...")
+    n_folds = int(conf.get('CrossValidation', 'NumberOfFolds'))
+    run_n = int(conf.get('CrossValidation', 'RunNumber'))
+    kf = KFold(idxs, n_folds=n_folds)
+    run = kf.runs[run_n - 1]
+
+    logging.debug("Assigning training data...")
+    train_x = numpy.take(X, run['Train'], axis=0)
+    logging.debug("Assigning training targets...")
+    train_y = numpy.take(Y, run['Train'], axis=0)
+    logging.debug("Assigning validation data...")
+    valid_x = numpy.take(X, run['Valid'], axis=0)
+    logging.debug("Assigning validation targets...")
+    valid_y = numpy.take(Y, run['Valid'], axis=0)
+    logging.debug("Assigning test data...")
+    test_x = numpy.take(X, run['Test'], axis=0)
+    logging.debug("Assigning test targets...")
+    test_y = numpy.take(Y, run['Test'], axis=0)
+    return load_into_theano(train_x, train_y, valid_x, valid_y, test_x, test_y)
 
 activations = {
     'Sigmoid': T.nnet.sigmoid,
