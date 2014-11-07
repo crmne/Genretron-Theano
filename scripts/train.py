@@ -15,7 +15,7 @@ import utils
 from logistic_regression import LogisticRegression
 from mlp import MLP
 from classifier import Classifier
-from cross_validation import KFold
+import cross_validation
 
 
 def load_features(features_path):
@@ -100,7 +100,7 @@ def load_dataset_and_preprocess(preprocessed_path, features_path, rng):
     n_folds = int(conf.get('CrossValidation', 'NumberOfFolds'))
     run_n = int(conf.get('CrossValidation', 'RunNumber'))
     logging.info("Cross-Validation run number %i/%i" % (run_n, n_folds))
-    kf = KFold(idxs, n_folds=n_folds)
+    kf = cross_validation.KFold(idxs, n_folds=n_folds)
     run = kf.runs[run_n - 1]
     logging.debug("Run description: %s" % run)
 
