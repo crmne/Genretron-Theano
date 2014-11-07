@@ -124,7 +124,6 @@ if __name__ == '__main__':
     init.init_theano()
     conf = config.get_config()
     model = conf.get('Model', 'Model')
-    train_valid_test_ratios = [int(x) for x in conf.get('Preprocessing', 'TrainValidTestPercentages').split(' ')]
     batch_size = int(conf.get('Model', 'BatchSize'))
     learning_rate = float(conf.get('Model', 'LearningRate'))
     n_epochs = int(conf.get('Model', 'NumberOfEpochs'))
