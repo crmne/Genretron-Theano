@@ -53,9 +53,10 @@ class Plot(object):
 
     def save_plot(self, format='PDF'):
         output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
-        output_file = os.path.join(output_folder, 'plot.' + format)
+        run_n = int(conf.get('CrossValidation', 'RunNumber'))
+        output_file = os.path.join(output_folder, 'plot%i.%s' % (run_n, format))
         self.update_plot()
         if save_plot:
             import logging
-            logging.debug("Plot saved in %s" % output_file)
+            # logging.debug("Plot saved in %s" % output_file)
             matplotlib.pyplot.savefig(output_file, format=format)

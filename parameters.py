@@ -38,7 +38,8 @@ class Parameters(object):
         if save_parameters:
             import os
             output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
-            output_file = os.path.join(output_folder, 'parameters.pkl')
-            import logging
-            logging.debug("Parameters and error scores saved in %s" % output_file)
+            run_n = int(conf.get('CrossValidation', 'RunNumber'))
+            output_file = os.path.join(output_folder, 'parameters%i.pkl' % run_n)
+            # import logging
+            # logging.debug("Parameters and error scores saved in %s" % output_file)
             self.save_to_pickle_file(output_file)

@@ -99,8 +99,10 @@ def load_dataset_and_preprocess(preprocessed_path, features_path, rng):
     logging.debug("Creating folds...")
     n_folds = int(conf.get('CrossValidation', 'NumberOfFolds'))
     run_n = int(conf.get('CrossValidation', 'RunNumber'))
+    logging.info("Cross-Validation run number %i/%i" % (run_n, n_folds))
     kf = KFold(idxs, n_folds=n_folds)
     run = kf.runs[run_n - 1]
+    logging.debug("Run description: %s" % run)
 
     logging.debug("Assigning training data...")
     train_x = numpy.take(X, run['Train'], axis=0)
@@ -147,10 +149,11 @@ if __name__ == '__main__':
     output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
     features_path = os.path.expanduser(conf.get('Preprocessing', 'RawFeaturesPath'))
     preprocessed_path = os.path.expanduser(conf.get('Preprocessing', 'PreprocessedFeaturesPath'))
+    run_n = int(conf.get('CrossValidation', 'RunNumber'))
 
     logging.info("Output folder: %s" % output_folder)
 
-    config.copy_to(os.path.join(output_folder, 'config.ini'))
+    config.copy_to(os.path.join(output_folder, 'config%i.ini' % run_n))
 
     # Preprocessing
     rng = RandomState(seed)
