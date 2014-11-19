@@ -1,4 +1,4 @@
-import time
+import datetime
 import numpy
 import theano
 import theano.tensor as T
@@ -101,7 +101,7 @@ class Classifier(object):
         best_params = None
         best_validation_loss = numpy.inf
         test_score = 0.
-        start_time = time.clock()
+        start_time = datetime.datetime.now()
 
         done_looping = False
         epoch = 0
@@ -178,13 +178,13 @@ class Classifier(object):
                         break
 
         finally:
-            end_time = time.clock()
+            end_time = datetime.datetime.now()
             logging.info(
                 'Optimization complete with best validation score of %f %%, with test performance %f %%' %
                 (best_validation_loss * 100., test_score * 100.))
             logging.info(
-                'The code run for %d epochs, with %f epochs/sec' %
-                (epoch, 1. * epoch / (end_time - start_time)))
+                'The code run for %d epochs (%s), with %f epochs/sec' %
+                (epoch, (end_time - start_time), 1. * epoch / (end_time - start_time).total_seconds()))
 
     def predict(self):
         raise NotImplementedError
