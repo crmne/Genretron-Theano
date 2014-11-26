@@ -92,30 +92,39 @@ def load_dataset_and_preprocess(preprocessed_path, features_path, rng):
         logging.info("Saving preprocessed data...")
         save_preprocessed(X, Y, preprocessed_path)
 
-    idxs = numpy.arange(X.shape[0])
-    logging.debug("Shuffling indices...")
-    rng.shuffle(idxs)
+    n_tracks = 1000
+    nw_per_track = 1247  # TODO: make those two numbers dynamic
+    tracks = numpy.arange(n_tracks)
+    logging.debug("Shuffling tracks...")
+    rng.shuffle(tracks)
 
     logging.debug("Creating folds...")
     n_folds = int(conf.get('CrossValidation', 'NumberOfFolds'))
     run_n = int(conf.get('CrossValidation', 'RunNumber'))
     logging.info("Cross-Validation run number %i/%i" % (run_n, n_folds))
-    kf = KFold(idxs, n_folds=n_folds)
+    kf = KFold(tracks, n_folds=n_folds)
     run = kf.runs[run_n - 1]
     logging.debug("Run description: %s" % run)
 
+    def track_ns_to_idxs(n_windows_per_track, track_ns):
+        return numpy.array(
+            [numpy.arange(
+                x * n_windows_per_track,
+                (x * n_windows_per_track) + n_windows_per_track
+            ) for x in track_ns]).flatten()
+
     logging.debug("Assigning training data...")
-    train_x = numpy.take(X, run['Train'], axis=0)
+    train_x = numpy.take(X, track_ns_to_idxs(nw_per_track, run['Train']), axis=0)
     logging.debug("Assigning training targets...")
-    train_y = numpy.take(Y, run['Train'], axis=0)
+    train_y = numpy.take(Y, track_ns_to_idxs(nw_per_track, run['Train']), axis=0)
     logging.debug("Assigning validation data...")
-    valid_x = numpy.take(X, run['Valid'], axis=0)
+    valid_x = numpy.take(X, track_ns_to_idxs(nw_per_track, run['Valid']), axis=0)
     logging.debug("Assigning validation targets...")
-    valid_y = numpy.take(Y, run['Valid'], axis=0)
+    valid_y = numpy.take(Y, track_ns_to_idxs(nw_per_track, run['Valid']), axis=0)
     logging.debug("Assigning test data...")
-    test_x = numpy.take(X, run['Test'], axis=0)
+    test_x = numpy.take(X, track_ns_to_idxs(nw_per_track, run['Test']), axis=0)
     logging.debug("Assigning test targets...")
-    test_y = numpy.take(Y, run['Test'], axis=0)
+    test_y = numpy.take(Y, track_ns_to_idxs(nw_per_track, run['Test']), axis=0)
     return load_into_theano(train_x, train_y, valid_x, valid_y, test_x, test_y)
 
 activations = {
