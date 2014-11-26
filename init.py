@@ -17,16 +17,14 @@ log_levels = {
 def init_output():
     conf = config.get_config()
     output_folder = os.path.expanduser(conf.get('Output', 'OutputFolder'))
-    # if os.path.isdir(output_folder):
-    #     if utils.query_yes_no("Output folder %s exists. Do you want to overwrite it?" % output_folder):
-    #         shutil.rmtree(output_folder)
-    #         os.makedirs(output_folder)
-    #     else:
-    #         raise StandardError("Output folder %s already exists." % output_folder)
-    # else:
-    #     os.makedirs(output_folder)
     if not os.path.isdir(output_folder):
-        os.makedirs(output_folder)
+        try:
+            os.makedirs(output_folder)
+        except OSError, e:
+            if e.errno == 17:  # folder might have been created after checking for its existence
+                pass
+            else:
+                raise
 
 
 def init_logger():
